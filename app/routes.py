@@ -33,6 +33,9 @@ def query():
         return jsonify(service().query(question, bool(body.get("force_fallback"))))
     except FileNotFoundError as error:
         return jsonify({"error": str(error)}), 503
+    except Exception as error:
+        return jsonify({"error": f"Internal server error: {str(error)}"}), 500
+
 
 
 @bp.post("/upload")

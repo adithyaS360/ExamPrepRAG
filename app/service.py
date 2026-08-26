@@ -33,10 +33,16 @@ class RagService:
                     fetch_vtu()
                 except Exception as e:
                     print("Could not fetch VTU PDF automatically:", e)
+            ingested = False
             if raw.exists() and (list(raw.glob("*.pdf")) or list(raw.glob("*.txt"))):
-                ingest(raw)
-            elif fixtures.exists() and list(fixtures.glob("*.txt")):
+                try:
+                    ingest(raw)
+                    ingested = True
+                except Exception as e:
+                    print("Raw ingestion failed, falling back to fixtures:", e)
+            if not ingested and fixtures.exists() and list(fixtures.glob("*.txt")):
                 ingest(fixtures)
+
 
 
 
