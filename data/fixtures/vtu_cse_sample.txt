@@ -1,0 +1,20 @@
+VTU CSE SAMPLE FIXTURE — FOR LOCAL PIPELINE TESTING ONLY
+Document: BCS503 Database Management Systems syllabus
+Page 1
+Module 1: Introduction to Database Systems. Characteristics of the database approach,
+database users and administrators, data models, schemas and instances, DBMS architecture,
+data independence and database languages.
+
+Module 2: Relational Model. Relational constraints, relational algebra, SQL basics,
+aggregate functions, joins, nested queries and views.
+
+Page 2
+Module 3: Database Design and Normalization. Functional dependencies, inference rules,
+closure of attribute sets, normal forms (1NF, 2NF, 3NF, BCNF), lossless join and dependency
+preservation.
+
+Page 3
+VTU QUESTION PAPER — DECEMBER 2024 — BCS503
+Answer any five full questions.
+Question 3(a): Define functional dependency. Find the closure of an attribute set.
+Question 3(b): Explain BCNF and dependency preservation with an example.
