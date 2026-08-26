@@ -12,3 +12,7 @@ def create_app() -> Flask:
     app.config["SETTINGS"] = settings
     app.register_blueprint(bp)
     return app
+
+
+app = create_app()
+
