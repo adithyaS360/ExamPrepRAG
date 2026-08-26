@@ -6,65 +6,218 @@
     <title>ExamPrepRAG · VTU document desk</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   </head>
+
   <body>
     <main class="desk">
+
       <header class="masthead">
-        <a class="brand" href="/" aria-label="ExamPrepRAG home"><span>EXAM</span>PREP<span>RAG</span></a>
+        <a class="brand" href="/" aria-label="ExamPrepRAG home">
+          <span>EXAM</span>PREP<span>RAG</span>
+        </a>
         <p class="edition">VTU CSE · DOCUMENT DESK <b>01</b></p>
       </header>
 
       <section class="hero">
         <p class="eyebrow">RETRIEVAL-AUGMENTED STUDY ASSISTANT</p>
         <h1>Ask the <em>papers.</em><br>Keep the proof.</h1>
-        <p class="lede">Search the syllabus and previous papers with answers tied back to the original document and page.</p>
+        <p class="lede">
+          Search the syllabus and previous papers with answers tied back
+          to the original document and page.
+        </p>
       </section>
 
       <section class="workspace" aria-label="Question workspace">
+
+        <!-- QUESTION -->
         <form id="question-form" class="question-card">
           <label for="question">Your research question</label>
+
           <div class="input-row">
-            <textarea id="question" rows="3" required placeholder="What topics come under Module 3 of DBMS?"></textarea>
-            <button id="ask-button" type="submit"><span>ASK THE ARCHIVE</span><i>↗</i></button>
+            <textarea
+              id="question"
+              rows="3"
+              required
+              placeholder="What topics come under Module 3 of DBMS?"
+            ></textarea>
+
+            <button id="ask-button" type="submit">
+              <span>ASK THE ARCHIVE</span>
+              <i>↗</i>
+            </button>
           </div>
+
           <div class="suggestions" aria-label="Example questions">
-            <button type="button" data-question="What topics come under Module 3?">MODULE TOPICS</button>
-            <button type="button" data-question="Has normalization appeared in past papers?">PAST-PAPER CHECK</button>
-            <button type="button" data-question="What does the syllabus say about functional dependencies?">SYLLABUS DETAIL</button>
+            <button
+              type="button"
+              data-question="What topics come under Module 3?"
+            >
+              MODULE TOPICS
+            </button>
+
+            <button
+              type="button"
+              data-question="Has normalization appeared in past papers?"
+            >
+              PAST-PAPER CHECK
+            </button>
+
+            <button
+              type="button"
+              data-question="What does the syllabus say about functional dependencies?"
+            >
+              SYLLABUS DETAIL
+            </button>
           </div>
         </form>
 
+
+        <!-- UPLOAD -->
         <form id="upload-form" class="question-card upload-card">
-          <label for="pdf-file">Add Custom Document (PDF / TXT)</label>
-          <div class="input-row">
-            <input type="file" id="pdf-file" accept=".pdf,.txt" required style="color:#fff; padding:10px 0;">
-            <button id="upload-button" type="submit"><span>UPLOAD & INDEX</span><i>↑</i></button>
+
+          <label for="pdf-file">
+            Add Custom Document
+            <span style="opacity:0.55;">(PDF / TXT)</span>
+          </label>
+
+          <!-- Upload key -->
+          <div style="margin: 14px 0;">
+            <input
+              type="password"
+              id="upload-key"
+              placeholder="Enter upload key"
+              autocomplete="off"
+              style="
+                width:100%;
+                box-sizing:border-box;
+                padding:12px 14px;
+                border:1px solid rgba(255,255,255,0.18);
+                background:rgba(255,255,255,0.04);
+                color:inherit;
+                font-family:monospace;
+                outline:none;
+              "
+            >
           </div>
-          <div id="upload-status" class="upload-status hidden" style="margin-top:10px; font-size:14px; font-family:monospace; color:#4ade80;"></div>
+
+          <!-- Custom file picker -->
+          <div
+            style="
+              border:1px dashed rgba(255,255,255,0.25);
+              padding:18px;
+              text-align:center;
+              background:rgba(255,255,255,0.025);
+            "
+          >
+            <input
+              type="file"
+              id="pdf-file"
+              accept=".pdf,.txt"
+              required
+              hidden
+            >
+
+            <label
+              for="pdf-file"
+              id="file-picker"
+              style="
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+                gap:10px;
+                padding:12px 18px;
+                border:1px solid rgba(255,255,255,0.25);
+                background:rgba(255,255,255,0.07);
+                color:inherit;
+                cursor:pointer;
+                font-family:monospace;
+                font-size:13px;
+                letter-spacing:0.04em;
+              "
+            >
+              <span>＋</span>
+              <span id="file-picker-text">CHOOSE PDF OR TXT</span>
+            </label>
+
+            <div
+              id="selected-file"
+              style="
+                margin-top:10px;
+                font-family:monospace;
+                font-size:12px;
+                opacity:0.55;
+              "
+            >
+              No file selected
+            </div>
+          </div>
+
+          <div
+            class="input-row"
+            style="margin-top:14px;"
+          >
+            <button id="upload-button" type="submit">
+              <span>UPLOAD & INDEX</span>
+              <i>↑</i>
+            </button>
+          </div>
+
+          <div
+            id="upload-status"
+            class="upload-status hidden"
+            style="
+              margin-top:12px;
+              font-size:13px;
+              font-family:monospace;
+              line-height:1.5;
+            "
+          ></div>
+
         </form>
+
 
         <aside class="field-notes">
           <p class="eyebrow">HOW IT WORKS</p>
+
           <ol>
             <li><b>01</b> Upload PDF notes or syllabus</li>
             <li><b>02</b> FAISS chunks & indexes vectors</li>
             <li><b>03</b> Ask any question with exact proof</li>
           </ol>
         </aside>
+
       </section>
 
 
-      <section id="result" class="result hidden" aria-live="polite">
+      <!-- RESULTS -->
+      <section
+        id="result"
+        class="result hidden"
+        aria-live="polite"
+      >
         <div class="result-heading">
           <p class="eyebrow">ARCHIVE RESPONSE</p>
           <span id="mode-badge" class="badge"></span>
         </div>
+
         <div id="answer" class="answer"></div>
+
         <div id="fallback" class="fallback hidden"></div>
-        <div class="evidence-header"><p class="eyebrow">SOURCE FOOTNOTES</p><span id="latency"></span></div>
+
+        <div class="evidence-header">
+          <p class="eyebrow">SOURCE FOOTNOTES</p>
+          <span id="latency"></span>
+        </div>
+
         <div id="citations" class="citations"></div>
       </section>
+
     </main>
-    <footer><span>BUILT FOR VERIFYING, NOT GUESSING.</span><span>FAISS · GROQ · FLASK</span></footer>
+
+    <footer>
+      <span>BUILT FOR VERIFYING, NOT GUESSING.</span>
+      <span>FAISS · GROQ · FLASK</span>
+    </footer>
+
     <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>
 </html>
