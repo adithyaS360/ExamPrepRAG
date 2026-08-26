@@ -27,10 +27,17 @@ class RagService:
             from .ingest import ingest
             raw = Path("data/raw")
             fixtures = Path("data/fixtures")
+            if not (raw.exists() and list(raw.glob("*.pdf"))):
+                try:
+                    from scripts.fetch_vtu_source import main as fetch_vtu
+                    fetch_vtu()
+                except Exception as e:
+                    print("Could not fetch VTU PDF automatically:", e)
             if raw.exists() and (list(raw.glob("*.pdf")) or list(raw.glob("*.txt"))):
                 ingest(raw)
             elif fixtures.exists() and list(fixtures.glob("*.txt")):
                 ingest(fixtures)
+
 
 
     def query(self, question: str, force_fallback: bool = False) -> dict:
