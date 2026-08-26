@@ -12,4 +12,4 @@ services:
       - key: GROQ_MODEL
         value: openai/gpt-oss-20b
       - key: EMBEDDING_BACKEND
-        value: sentence_transformer
+        value: hash
