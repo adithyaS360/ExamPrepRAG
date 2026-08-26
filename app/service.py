@@ -34,70 +34,40 @@ class RagService:
         self._ensure_index()
 
     def _ensure_index(self) -> None:
+    if self.store.ready():
+        return
 
-        if self.store.ready():
-            return
+    from .ingest import ingest
 
-        from .ingest import ingest
+    raw = Path("data/raw")
 
-        raw = Path("data/raw")
-        fixtures = Path("data/fixtures")
+    if not raw.exists():
+        raise RuntimeError(
+            "data/raw does not exist. "
+            "Private documents were not downloaded."
+        )
 
-        documents = []
+    sources = [
+        *raw.rglob("*.pdf"),
+        *raw.rglob("*.PDF"),
+        *raw.rglob("*.txt"),
+        *raw.rglob("*.TXT"),
+    ]
 
-        if raw.exists():
-            documents = [
-                *raw.rglob("*.pdf"),
-                *raw.rglob("*.PDF"),
-                *raw.rglob("*.txt"),
-                *raw.rglob("*.TXT"),
-            ]
+    if not sources:
+        raise RuntimeError(
+            "No documents found in data/raw. "
+            "Private document download may have failed."
+        )
 
-        if not documents:
+    try:
+        stats = ingest(raw)
+        print("RAG index built:", stats)
 
-            try:
-                from scripts.fetch_vtu_source import main as fetch_vtu
-
-                fetch_vtu()
-
-            except Exception as error:
-                print(
-                    "Could not fetch VTU PDF automatically:",
-                    error,
-                )
-
-            if raw.exists():
-                documents = [
-                    *raw.rglob("*.pdf"),
-                    *raw.rglob("*.PDF"),
-                    *raw.rglob("*.txt"),
-                    *raw.rglob("*.TXT"),
-                ]
-
-        ingested = False
-
-        if documents:
-
-            try:
-                ingest(raw)
-                ingested = True
-
-            except Exception as error:
-                print(
-                    "Raw ingestion failed, "
-                    "falling back to fixtures:",
-                    error,
-                )
-
-        if (
-            not ingested
-            and fixtures.exists()
-            and (
-                list(fixtures.glob("*.txt"))
-                or list(fixtures.glob("*.pdf"))
-            )
-        ):
-            ingest(fixtures)
+    except Exception as error:
+        raise RuntimeError(
+            f"Failed to ingest private documents: {error}"
+        ) from error
 
     def _extract_subject(
         self,
