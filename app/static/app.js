@@ -46,3 +46,38 @@ form.addEventListener('submit', async (event) => {
   } catch (error) { window.alert(error.message); }
   finally { askButton.disabled = false; askButton.querySelector('span').textContent = 'ASK THE ARCHIVE'; }
 });
+
+const uploadForm = document.querySelector('#upload-form');
+const pdfFile = document.querySelector('#pdf-file');
+const uploadButton = document.querySelector('#upload-button');
+const uploadStatus = document.querySelector('#upload-status');
+
+if (uploadForm) {
+  uploadForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!pdfFile.files.length) return;
+    uploadButton.disabled = true;
+    uploadButton.querySelector('span').textContent = 'INDEXING PDF…';
+    uploadStatus.classList.remove('hidden');
+    uploadStatus.style.color = '#4ade80';
+    uploadStatus.textContent = 'Processing and embedding PDF chunks...';
+    try {
+      const formData = new FormData();
+      formData.append('file', pdfFile.files[0]);
+      const response = await fetch('/upload', { method: 'POST', body: formData });
+      const text = await response.text();
+      let data;
+      try { data = JSON.parse(text); } catch (e) { throw new Error(`Upload error (${response.status}): ${text.substring(0, 150)}`); }
+      if (!response.ok) throw new Error(data.error || 'Upload failed');
+      uploadStatus.textContent = `✅ ${data.message} (${data.stats.chunks} total chunks ready)`;
+      pdfFile.value = '';
+    } catch (error) {
+      uploadStatus.textContent = `❌ ${error.message}`;
+      uploadStatus.style.color = '#ef4444';
+    } finally {
+      uploadButton.disabled = false;
+      uploadButton.querySelector('span').textContent = 'UPLOAD & INDEX';
+    }
+  });
+}
+

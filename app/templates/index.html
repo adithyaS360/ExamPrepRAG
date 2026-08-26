@@ -33,15 +33,25 @@
           </div>
         </form>
 
+        <form id="upload-form" class="question-card upload-card">
+          <label for="pdf-file">Add Custom Document (PDF / TXT)</label>
+          <div class="input-row">
+            <input type="file" id="pdf-file" accept=".pdf,.txt" required style="color:#fff; padding:10px 0;">
+            <button id="upload-button" type="submit"><span>UPLOAD & INDEX</span><i>↑</i></button>
+          </div>
+          <div id="upload-status" class="upload-status hidden" style="margin-top:10px; font-size:14px; font-family:monospace; color:#4ade80;"></div>
+        </form>
+
         <aside class="field-notes">
           <p class="eyebrow">HOW IT WORKS</p>
           <ol>
-            <li><b>01</b> Query becomes a vector</li>
-            <li><b>02</b> FAISS finds the closest passages</li>
-            <li><b>03</b> Groq answers from those passages</li>
+            <li><b>01</b> Upload PDF notes or syllabus</li>
+            <li><b>02</b> FAISS chunks & indexes vectors</li>
+            <li><b>03</b> Ask any question with exact proof</li>
           </ol>
         </aside>
       </section>
+
 
       <section id="result" class="result hidden" aria-live="polite">
         <div class="result-heading">

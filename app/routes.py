@@ -33,3 +33,30 @@ def query():
         return jsonify(service().query(question, bool(body.get("force_fallback"))))
     except FileNotFoundError as error:
         return jsonify({"error": str(error)}), 503
+
+
+@bp.post("/upload")
+def upload():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part in request"}), 400
+    file = request.files["file"]
+    if not file or not file.filename:
+        return jsonify({"error": "No file selected"}), 400
+    filename = file.filename
+    if not (filename.lower().endswith(".pdf") or filename.lower().endswith(".txt")):
+        return jsonify({"error": "Only .pdf and .txt files are supported"}), 400
+    
+    raw_dir = Path("data/raw")
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    save_path = raw_dir / filename
+    file.save(save_path)
+
+    from .ingest import ingest
+    try:
+        stats = ingest(raw_dir)
+        service().cache.clear()
+        return jsonify({"message": f"Successfully uploaded and indexed '{filename}'!", "stats": stats})
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+
