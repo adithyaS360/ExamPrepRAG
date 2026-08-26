@@ -2,6 +2,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 import numpy as np
+from pathlib import Path
 from .config import Settings
 from .embeddings import embed
 from .llm import LlmUnavailable, answer
@@ -19,6 +20,18 @@ class RagService:
         self.settings = settings
         self.store = FaissStore(settings.index_dir)
         self.cache: list[CacheEntry] = []  # process-local: replace with Redis when horizontally scaling
+        self._ensure_index()
+
+    def _ensure_index(self) -> None:
+        if not self.store.ready():
+            from .ingest import ingest
+            raw = Path("data/raw")
+            fixtures = Path("data/fixtures")
+            if raw.exists() and (list(raw.glob("*.pdf")) or list(raw.glob("*.txt"))):
+                ingest(raw)
+            elif fixtures.exists() and list(fixtures.glob("*.txt")):
+                ingest(fixtures)
+
 
     def query(self, question: str, force_fallback: bool = False) -> dict:
         started = time.perf_counter()

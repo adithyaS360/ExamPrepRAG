@@ -19,8 +19,15 @@ form.addEventListener('submit', async (event) => {
   askButton.querySelector('span').textContent = 'SEARCHING ARCHIVE…';
   try {
     const response = await fetch('/query', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question:input.value})});
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new Error(`Server error (${response.status}): ${text.substring(0, 150)}`);
+    }
     if (!response.ok) throw new Error(data.error || 'The archive could not answer that request.');
+
     result.classList.remove('hidden');
     const isFallback = data.mode === 'retrieval_fallback';
     badge.textContent = isFallback ? 'SOURCE-ONLY FALLBACK' : 'GROUNDED ANSWER';
