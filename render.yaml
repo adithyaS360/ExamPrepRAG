@@ -8,14 +8,22 @@ services:
     startCommand: gunicorn --workers 1 --threads 4 --timeout 30 'app:create_app()'
 
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.11
+          - key: PYTHON_VERSION
+            value: 3.11.11
 
-      - key: GROQ_API_KEY
-        sync: false
+          - key: GROQ_API_KEY
+            sync: false
 
-      - key: GROQ_MODEL
-        value: openai/gpt-oss-20b
+          - key: GROQ_MODEL
+            value: openai/gpt-oss-20b
 
-      - key: EMBEDDING_BACKEND
-        value: hash
+          - key: EMBEDDING_BACKEND
+            value: hash
+
+          - key: SUPABASE_URL
+            sync: false
+
+          - key: SUPABASE_SECRET_KEY
+            sync: false
+
+     
