@@ -1,73 +1,45 @@
-from __future__ import annotations
-
-import re
-import time
-from dataclasses import dataclass
-from pathlib import Path
-
-import numpy as np
-
-from .config import Settings
-from .embeddings import embed
-from .llm import LlmUnavailable, answer
-from .store import FaissStore
-
-
-@dataclass
-class CacheEntry:
-    vector: np.ndarray
-    subject: str
-    module: int | None
-    response: dict
-
-
 class RagService:
 
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.store = FaissStore(
-            settings.index_dir
-        )
-
+        self.store = FaissStore(settings.index_dir)
         self.cache: list[CacheEntry] = []
-
         self._ensure_index()
 
     def _ensure_index(self) -> None:
-    if self.store.ready():
-        return
+        if self.store.ready():
+            return
 
-    from .ingest import ingest
+        from .ingest import ingest
 
-    raw = Path("data/raw")
+        raw = Path("data/raw")
 
-    if not raw.exists():
-        raise RuntimeError(
-            "data/raw does not exist. "
-            "Private documents were not downloaded."
-        )
+        if not raw.exists():
+            raise RuntimeError(
+                "data/raw does not exist. "
+                "Private documents were not downloaded."
+            )
 
-    sources = [
-        *raw.rglob("*.pdf"),
-        *raw.rglob("*.PDF"),
-        *raw.rglob("*.txt"),
-        *raw.rglob("*.TXT"),
-    ]
+        sources = [
+            *raw.rglob("*.pdf"),
+            *raw.rglob("*.PDF"),
+            *raw.rglob("*.txt"),
+            *raw.rglob("*.TXT"),
+        ]
 
-    if not sources:
-        raise RuntimeError(
-            "No documents found in data/raw. "
-            "Private document download may have failed."
-        )
+        if not sources:
+            raise RuntimeError(
+                "No documents found in data/raw. "
+                "Private document download may have failed."
+            )
 
-    try:
-        stats = ingest(raw)
-        print("RAG index built:", stats)
-
-    except Exception as error:
-        raise RuntimeError(
-            f"Failed to ingest private documents: {error}"
-        ) from error
+        try:
+            stats = ingest(raw)
+            print("RAG index built:", stats)
+        except Exception as error:
+            raise RuntimeError(
+                f"Failed to ingest private documents: {error}"
+            ) from error
 
     def _extract_subject(
         self,
@@ -80,7 +52,6 @@ class RagService:
         ]
 
         for pattern in patterns:
-
             match = re.match(
                 pattern,
                 question,
@@ -115,9 +86,7 @@ class RagService:
 
             if match:
 
-                module = int(
-                    match.group(1)
-                )
+                module = int(match.group(1))
 
                 clean_question = re.sub(
                     pattern,
@@ -132,10 +101,7 @@ class RagService:
                     clean_question,
                 ).strip(" :-,")
 
-                return (
-                    module,
-                    clean_question,
-                )
+                return module, clean_question
 
         return None, question.strip()
 
@@ -147,12 +113,11 @@ class RagService:
 
         started = time.perf_counter()
 
-        subject, clean_question = (
-            self._extract_subject(question)
+        subject, clean_question = self._extract_subject(
+            question
         )
 
         if subject is None:
-
             return {
                 "question": question,
                 "answer": None,
@@ -164,25 +129,20 @@ class RagService:
                 ),
                 "citations": [],
                 "retrieved_chunks": [],
-                "cache": {
-                    "hit": False
-                },
+                "cache": {"hit": False},
                 "latency_ms": {
                     "embedding": 0.0,
                     "retrieval": 0.0,
                     "llm": 0.0,
                     "total": round(
-                        (
-                            time.perf_counter()
-                            - started
-                        ) * 1000,
+                        (time.perf_counter() - started) * 1000,
                         2,
                     ),
                 },
             }
 
-        module, clean_question = (
-            self._extract_module(clean_question)
+        module, clean_question = self._extract_module(
+            clean_question
         )
 
         vector, embedding_ms = embed(
@@ -190,12 +150,8 @@ class RagService:
             self.settings.embedding_model,
             self.settings.embedding_backend,
         )
-        # -------------------------
-        # RETRIEVAL
-        # -------------------------
-        retrieval_started = (
-            time.perf_counter()
-        )
+
+        retrieval_started = time.perf_counter()
 
         matches = self.store.search(
             vector[0],
@@ -205,21 +161,13 @@ class RagService:
         )
 
         retrieval_ms = (
-            time.perf_counter()
-            - retrieval_started
+            time.perf_counter() - retrieval_started
         ) * 1000
 
-        # -------------------------
-        # LLM
-        # -------------------------
-        llm_started = (
-            time.perf_counter()
-        )
-
+        llm_started = time.perf_counter()
         fallback_reason = None
 
         try:
-
             if force_fallback:
                 raise LlmUnavailable(
                     "forced fallback for smoke test"
@@ -236,19 +184,14 @@ class RagService:
             mode = "llm"
 
         except LlmUnavailable as error:
-
             generated = None
             mode = "retrieval_fallback"
             fallback_reason = str(error)
 
         llm_ms = (
-            time.perf_counter()
-            - llm_started
+            time.perf_counter() - llm_started
         ) * 1000
 
-        # -------------------------
-        # RESPONSE
-        # -------------------------
         result = {
             "question": question,
             "subject": subject,
@@ -259,12 +202,7 @@ class RagService:
 
             "citations": [
                 chunk.citation()
-                | {
-                    "score": round(
-                        score,
-                        4,
-                    )
-                }
+                | {"score": round(score, 4)}
                 for chunk, score in matches
             ],
 
@@ -272,51 +210,22 @@ class RagService:
                 {
                     "text": chunk.text,
                     "citation": chunk.citation(),
-                    "score": round(
-                        score,
-                        4,
-                    ),
+                    "score": round(score, 4),
                 }
                 for chunk, score in matches
             ],
 
-            "cache": {
-                "hit": False
-            },
+            "cache": {"hit": False},
 
             "latency_ms": {
-                "embedding": round(
-                    embedding_ms,
-                    2,
-                ),
-                "retrieval": round(
-                    retrieval_ms,
-                    2,
-                ),
-                "llm": round(
-                    llm_ms,
-                    2,
-                ),
+                "embedding": round(embedding_ms, 2),
+                "retrieval": round(retrieval_ms, 2),
+                "llm": round(llm_ms, 2),
                 "total": round(
-                    (
-                        time.perf_counter()
-                        - started
-                    ) * 1000,
+                    (time.perf_counter() - started) * 1000,
                     2,
                 ),
             },
         }
-
-        #self.cache.append(
-            #CacheEntry(
-              #  vector=vector[0],
-                #subject=subject,
-               # module=module,
-               # response=result,
-            #)
-      #  )
-
-        if len(self.cache) > 100:
-            self.cache.pop(0)
 
         return result
