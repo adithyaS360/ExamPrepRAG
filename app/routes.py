@@ -1,5 +1,5 @@
 from __future__ import annotations
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, jsonify, render_template, request
 from .service import RagService
 from .store import FaissStore
 
@@ -10,6 +10,11 @@ def service() -> RagService:
     if "RAG_SERVICE" not in current_app.extensions:
         current_app.extensions["RAG_SERVICE"] = RagService(current_app.config["SETTINGS"])
     return current_app.extensions["RAG_SERVICE"]
+
+
+@bp.get("/")
+def index():
+    return render_template("index.html")
 
 
 @bp.get("/health")

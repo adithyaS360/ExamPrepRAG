@@ -12,3 +12,9 @@ def client():
 def test_query_requires_question(client):
     response = client.post("/query", json={})
     assert response.status_code == 400
+
+
+def test_index_serves_research_interface(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"Ask the" in response.data
