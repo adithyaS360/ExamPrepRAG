@@ -3,7 +3,7 @@ services:
     name: vtu-rag-api
     env: python
 
-    buildCommand: pip install -r requirements-ml.txt && python scripts/fetch_vtu_source.py && python -m app.ingest data/raw
+    buildCommand: pip install -r requirements-ml.txt && python scripts/download_private_documents.py && python -m app.ingest data/raw
 
     startCommand: gunicorn --workers 1 --threads 4 --timeout 30 'app:create_app()'
 
