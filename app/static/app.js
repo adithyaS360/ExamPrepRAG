@@ -90,10 +90,23 @@ form.addEventListener('submit', async (event) => {
 
         badge.classList.toggle('fallback', isFallback);
 
-        answer.textContent =
-            data.answer ||
-            'The language model is unavailable, so here is the retrieved evidence directly.';
+if (data.mode === 'subject_required') {
+    answer.textContent =
+        data.error ||
+        'Please specify a subject: CNS, BDA, PC, or IOT.';
 
+    badge.textContent = 'SUBJECT REQUIRED';
+    badge.classList.remove('fallback');
+
+    fallback.classList.add('hidden');
+    citations.replaceChildren();
+
+} else {
+    answer.innerHTML =
+        data.answer
+            ? marked.parse(data.answer)
+            : 'The language model is unavailable, so here is the retrieved evidence directly.';
+}
         fallback.classList.toggle('hidden', !isFallback);
 
         if (isFallback) {

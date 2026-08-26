@@ -6,3 +6,8 @@ data/index/
 data/raw/*.pdf
 !data/raw/.gitkeep
 .pytest_cache/
+# Private study documents
+data/raw/**/*.pdf
+data/raw/**/*.PDF
+data/raw/**/*.txt
+data/raw/**/*.TXT
