@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from .config import Settings
 from .embeddings import embed
@@ -61,9 +64,8 @@ class RagService:
                 fetch_vtu()
 
             except Exception as error:
-                print(
-                    "Could not fetch VTU PDF automatically:",
-                    error,
+                logger.warning(
+                    "Could not fetch VTU PDF automatically: %s", error
                 )
 
             if raw.exists():
@@ -83,9 +85,8 @@ class RagService:
                 ingested = True
 
             except Exception as error:
-                print(
-                    "Raw ingestion failed, "
-                    "falling back to fixtures:",
+                logger.warning(
+                    "Raw ingestion failed, falling back to fixtures: %s",
                     error,
                 )
 
@@ -220,6 +221,30 @@ class RagService:
             self.settings.embedding_model,
             self.settings.embedding_backend,
         )
+
+        # -------------------------
+        # SEMANTIC CACHE LOOKUP
+        # -------------------------
+        cache_hit, cache_score = self._find_cache_hit(
+            vector[0], subject, module
+        )
+
+        if cache_hit is not None and not force_fallback:
+            cached_response = dict(cache_hit.response)
+            cached_response["cache"] = {
+                "hit": True,
+                "similarity": round(cache_score, 4),
+            }
+            cached_response["latency_ms"] = {
+                "embedding": round(embedding_ms, 2),
+                "retrieval": 0.0,
+                "llm": 0.0,
+                "total": round(
+                    (time.perf_counter() - started) * 1000, 2
+                ),
+            }
+            return cached_response
+
         # -------------------------
         # RETRIEVAL
         # -------------------------
@@ -337,16 +362,52 @@ class RagService:
             },
         }
 
-        #self.cache.append(
-            #CacheEntry(
-              #  vector=vector[0],
-                #subject=subject,
-               # module=module,
-               # response=result,
-            #)
-      #  )
+        if not force_fallback:
+            self.cache.append(
+                CacheEntry(
+                    vector=vector[0],
+                    subject=subject,
+                    module=module,
+                    response=result,
+                )
+            )
 
-        if len(self.cache) > 100:
-            self.cache.pop(0)
+            if len(self.cache) > 100:
+                self.cache.pop(0)
 
         return result
+
+    def _find_cache_hit(
+        self,
+        vector: np.ndarray,
+        subject: str,
+        module: int | None,
+    ) -> tuple["CacheEntry | None", float]:
+        """Look for a previously-cached answer to a near-identical question.
+
+        Vectors are L2-normalized (see embeddings.embed / FaissStore), so the
+        dot product below is cosine similarity, same convention as FAISS
+        retrieval. Only entries for the same subject/module are considered,
+        since caching across different modules would surface answers that
+        cite the wrong evidence.
+        """
+        best_entry = None
+        best_score = -1.0
+
+        for entry in self.cache:
+            if entry.subject != subject or entry.module != module:
+                continue
+
+            score = float(np.dot(entry.vector, vector))
+
+            if score > best_score:
+                best_score = score
+                best_entry = entry
+
+        if (
+            best_entry is not None
+            and best_score >= self.settings.cache_similarity_threshold
+        ):
+            return best_entry, best_score
+
+        return None, best_score

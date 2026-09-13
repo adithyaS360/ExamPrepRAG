@@ -6,7 +6,14 @@ from app import create_app
 
 
 @pytest.fixture()
-def client():
+def client(tmp_path, monkeypatch):
+    # RagService._ensure_index() and the /upload route both read/write
+    # "data/raw" and "data/fixtures" as paths relative to the current
+    # working directory. Without this chdir, running the test suite writes
+    # test fixtures (including test_upload_rejects_path_traversal_filename's
+    # "evil.pdf") straight into the real project's data/raw/ directory,
+    # which then breaks real ingestion the next time someone runs the app.
+    monkeypatch.chdir(tmp_path)
     app = create_app()
     app.config.update(TESTING=True)
     return app.test_client()

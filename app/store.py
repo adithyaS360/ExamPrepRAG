@@ -17,6 +17,10 @@ class FaissStore:
         self.directory = directory
         self.index_path = directory / "chunks.faiss"
         self.meta_path = directory / "chunks.json"
+        # In-process cache so `search()` doesn't re-read the index and the
+        # (potentially large) metadata JSON from disk on every request.
+        # Invalidated automatically whenever build() writes a new index.
+        self._cached: tuple[faiss.Index, list[Chunk]] | None = None
 
     def _faiss_path(self) -> Path:
 
@@ -71,9 +75,17 @@ class FaissStore:
             encoding="utf-8",
         )
 
+        # A fresh index was just written to disk; drop the stale in-memory
+        # copy so the next load() picks up the new one instead of serving
+        # chunks that no longer match what's on disk.
+        self._cached = None
+
     def load(
         self,
     ) -> tuple[faiss.Index, list[Chunk]]:
+
+        if self._cached is not None:
+            return self._cached
 
         if (
             not self._faiss_path().exists()
@@ -94,13 +106,15 @@ class FaissStore:
             )
         )
 
-        return (
+        self._cached = (
             index,
             [
                 Chunk(**item)
                 for item in items
             ],
         )
+
+        return self._cached
 
     def ready(self) -> bool:
         return (
