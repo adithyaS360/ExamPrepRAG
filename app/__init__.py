@@ -10,6 +10,7 @@ def create_app() -> Flask:
     app = Flask(__name__)
     settings = Settings.from_env()
     app.config["SETTINGS"] = settings
+    app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024  # 25 MB upload cap
     app.register_blueprint(bp)
     return app
 
