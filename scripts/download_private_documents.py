@@ -80,21 +80,23 @@ def main() -> None:
 
     # Remove previously downloaded documents.
     # The .gitkeep file is preserved.
-    for folder in FOLDERS:
-        directory = RAW_DIR / folder
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-        if not directory.exists():
+    for item in RAW_DIR.iterdir():
+        if item.name == ".gitkeep":
             continue
 
-        for item in directory.iterdir():
-            if item.name == ".gitkeep":
-                continue
+        if item.is_file():
+            item.unlink()
 
-            if item.is_file():
-                item.unlink()
+        elif item.is_dir():
+            shutil.rmtree(item)
 
-            elif item.is_dir():
-                shutil.rmtree(item)
+    for folder in FOLDERS:
+        (RAW_DIR / folder).mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
     total = 0
 
