@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 import os
 from pathlib import Path
 
@@ -70,7 +71,7 @@ def _check_upload_auth() -> bool:
         return False
 
     provided = request.headers.get("X-Upload-Key", "")
-    return provided == expected
+    return hmac.compare_digest(provided, expected)
 
 
 @bp.post("/upload")

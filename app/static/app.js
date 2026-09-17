@@ -104,7 +104,7 @@ if (data.mode === 'subject_required') {
 } else {
     answer.innerHTML =
         data.answer
-            ? marked.parse(data.answer)
+            ? DOMPurify.sanitize(marked.parse(data.answer))
             : 'The language model is unavailable, so here is the retrieved evidence directly.';
 }
         fallback.classList.toggle('hidden', !isFallback);
